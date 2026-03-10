@@ -1,14 +1,14 @@
 from app.models.user import User
 from fastapi import HTTPException
 import re
-import bcrypt
+from app.utils.utils import _hash_password, _verify_password
 
 
-def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+# def _hash_password(password: str) -> str:
+#     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
-def _verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
+# def _verify_password(password: str, hashed: str) -> bool:
+#     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 def auth_login_service(email: str, password: str, db):
