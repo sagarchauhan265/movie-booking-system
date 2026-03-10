@@ -84,6 +84,6 @@ class UserResponse(UserBase):
 class UserRegister(BaseModel):
       full_name:str = Field(..., min_length=2, max_length=255)
       email:str = Field(..., max_length=255)
-      password:str = Field(..., min_length=6, max_length=128)
+      password:str = Field(..., min_length=6)
       phone:str = Field(None, max_length=10)
     
