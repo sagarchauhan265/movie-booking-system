@@ -1,59 +1,45 @@
+import bcrypt
 from app.models.user import User
 from passlib.context import CryptContext
 from fastapi import HTTPException
-import re
+from app.api.utils.utils import PassWord_Verify
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+ 
+def _verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
-def auth_signup_service(user, db):
+def auth_user_register_service(user,db):
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise ValueError("EMAIL_ALREADY_EXISTS")
-    hashed_password = pwd_context.hash(user.password)
+    
+    hashed_password = _hash_password(user.password)
     new_user = User(
-        name=user.name,
-        email=user.email,
-        password=hashed_password
+        full_name = user.full_name,
+        email = user.email,
+        password_hash = hashed_password,
+        phone = user.phone
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return {
-        "status": "success",
-        "data": new_user
+        "status":"success",
+        "data":new_user
     }
-
-
-def auth_login_service(email: str, password: str, db):
-
-    db_user = db.query(User).filter(User.email == email.strip()).first()
+   
+def auth_login_service(user, db):
+    db_user = db.query(User).filter(User.email == user.email).first()
+    
     if not db_user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    if not pwd_context.verify(password, db_user.password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    return {
+        raise HTTPException(status_code=404, detail="User not found")
+    Password_Correct =_verify_password(user.password, db_user.password_hash)
+    if Password_Correct==True:     
+     return {
         "status": "success",
         "data": db_user
-    }
-
-
-def auth_user_register_service(user, db):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
-        raise ValueError("EMAIL_ALREADY_EXISTS")
-    hashed_password = pwd_context.hash(user.password)
-    new_user = User(
-        full_name=user.full_name,
-        email=user.email,
-        password_hash=hashed_password,
-        phone=user.phone
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return {
-        "status": "success",
-        "data": new_user
-    }
+     }
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
